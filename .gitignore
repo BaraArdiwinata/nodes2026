@@ -1,0 +1,23 @@
+# Secrets
+.env
+.env.*
+*.env
+
+# Python
+venv/
+.venv/
+env/
+__pycache__/
+*.pyc
+*.pyo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/settings.json
+
+# Local backup of nested git metadata
+.git-nested-backup/

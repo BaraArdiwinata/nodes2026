@@ -1,0 +1,221 @@
+import os
+import sys
+import pandas as pd
+import networkx as nx
+import networkx.algorithms.community as nx_comm
+
+# Reconfigure stdout to UTF-8 to handle special Javanese/Balinese names in console
+if sys.stdout.encoding != 'utf-8':
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+    except Exception:
+        pass
+
+def main():
+    print("=== STARTING NUSANTARA DYNASTY GRAPH ANALYSIS ===")
+    
+    # 1. LOAD DATA
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    csv_file = os.path.join(script_dir, "../data/dataset_dinasti_final.csv")
+    if not os.path.exists(csv_file):
+        print(f"Error: {csv_file} not found! Please run the pipeline script first.")
+        sys.exit(1)
+        
+    df = pd.read_csv(csv_file, sep=';')
+    print(f"Loaded {len(df)} rows from {csv_file}.")
+
+    # 2. COMPILE KNOWN KINGDOMS AND TERMS FOR ACCURATE TYPE CLASSIFICATION
+    known_kingdoms = set()
+    for _, row in df.iterrows():
+        k = row['kerajaan']
+        nk = row['namaKerajaan']
+        if k and not pd.isna(k) and str(k).strip():
+            known_kingdoms.add(str(k).strip().lower())
+        if nk and not pd.isna(nk) and str(nk).strip():
+            known_kingdoms.add(str(nk).strip().lower())
+
+    # Add extra general kingdom/geographical terms
+    kingdom_terms = [
+        "kingdom", "sultanate", "empire", "kerajaan", "kesultanan", "daha", 
+        "indies", "residency", "presidency", "batavia", "lambri", "pasai", 
+        "pidie", "surabaya", "trowulan", "singhasari", "banten", "demak",
+        "cirebon", "mataram", "kediri", "sunda", "palembang", "tidore", "kutai"
+    ]
+
+    def is_kingdom(name_str):
+        name_lower = name_str.lower().strip()
+        if name_lower in known_kingdoms:
+            return True
+        if any(term in name_lower for term in kingdom_terms):
+            return True
+        return False
+
+    # 3. CONSTRUCT DIRECTED GRAPH
+    G = nx.DiGraph()
+    node_types = {}
+    
+    # Iterate rows and populate nodes and edges
+    for _, row in df.iterrows():
+        person = row['orang']
+        kingdom = row['kerajaan']
+        
+        if not person or pd.isna(person):
+            continue
+            
+        # Add Person node
+        G.add_node(person)
+        node_types[person] = 'Person'
+        
+        # Add Kingdom node and link
+        if kingdom and not pd.isna(kingdom):
+            G.add_node(kingdom)
+            node_types[kingdom] = 'Kingdom'
+            G.add_edge(person, kingdom, relation='AFFILIATED')
+            
+        # Helper function to split comma-separated relatives and add edges
+        def add_split_relations(col_name, rel_type):
+            val = row[col_name]
+            if val and not pd.isna(val) and str(val).strip():
+                names = [n.strip() for n in str(val).split(',') if n.strip()]
+                for name in names:
+                    if name == person:
+                        continue
+                        
+                    # Determine node type (Kingdom vs Person)
+                    n_type = 'Kingdom' if is_kingdom(name) else 'Person'
+                    
+                    # For succession lines (Tokoh ke Tokoh), filter out kingdom entities
+                    if rel_type in ['MENGGANTIKAN', 'DIGANTIKAN_OLEH'] and n_type == 'Kingdom':
+                        continue
+                            
+                    # Add node if not exists
+                    if not G.has_node(name):
+                        G.add_node(name)
+                        node_types[name] = n_type
+                    
+                    # Add directed edge representing relationship flow
+                    G.add_edge(person, name, relation=rel_type)
+
+        add_split_relations('ayah', 'AYAH')
+        add_split_relations('ibu', 'IBU')
+        add_split_relations('pasangan', 'PASANGAN')
+        add_split_relations('anak', 'ANAK')
+        add_split_relations('saudara', 'SAUDARA')
+        add_split_relations('kerabat', 'KERABAT')
+        add_split_relations('pendahulu', 'MENGGANTIKAN')
+        add_split_relations('penerus', 'DIGANTIKAN_OLEH')
+
+    print(f"Graph Construction Complete: {G.number_of_nodes()} nodes, {G.number_of_edges()} edges.")
+
+    # 4. COMPUTE PAGERANK CENTRALITY
+    print("\nCalculating PageRank Centrality...")
+    pagerank = nx.pagerank(G, alpha=0.85)
+    
+    # Sort and split overall, people, and kingdoms
+    sorted_nodes = sorted(pagerank.items(), key=lambda x: x[1], reverse=True)
+    
+    people_pr = [(node, score) for node, score in sorted_nodes if node_types.get(node) == 'Person']
+    kingdoms_pr = [(node, score) for node, score in sorted_nodes if node_types.get(node) == 'Kingdom']
+
+    print("\n--- TOP 10 INFLUENTIAL PEOPLE (PAGERANK) ---")
+    for i, (name, score) in enumerate(people_pr[:10], 1):
+        print(f"{i}. {name:<40} : {score:.5f}")
+
+    print("\n--- TOP 10 INFLUENTIAL KINGDOMS (PAGERANK) ---")
+    for i, (name, score) in enumerate(kingdoms_pr[:10], 1):
+        print(f"{i}. {name:<40} : {score:.5f}")
+
+    # 5. LOUVAIN COMMUNITY DETECTION
+    print("\nCalculating Louvain Communities (Cluster Dinasti)...")
+    # Louvain requires undirected graph
+    G_undir = G.to_undirected()
+    communities = nx_comm.louvain_communities(G_undir, seed=42)
+    
+    community_map = {}
+    for comm_id, comm in enumerate(communities):
+        for node in comm:
+            community_map[node] = comm_id
+            
+    print(f"Detected {len(communities)} distinct Louvain communities/dynasty clusters.")
+
+    # 6. BETWEENNESS CENTRALITY (Tokoh Jembatan Antar-Dinasti)
+    print("\nCalculating Betweenness Centrality (Bridge Figures Between Dynasties)...")
+    betweenness = nx.betweenness_centrality(G_undir, normalized=True)
+
+    sorted_betweenness = sorted(betweenness.items(), key=lambda x: x[1], reverse=True)
+    people_bw = [(node, score) for node, score in sorted_betweenness if node_types.get(node) == 'Person']
+    kingdoms_bw = [(node, score) for node, score in sorted_betweenness if node_types.get(node) == 'Kingdom']
+
+    print("\n--- TOP 10 BRIDGE FIGURES (BETWEENNESS CENTRALITY) ---")
+    for i, (name, score) in enumerate(people_bw[:10], 1):
+        print(f"{i}. {name:<40} : {score:.5f}")
+
+    print("\n--- TOP 5 BRIDGE KINGDOMS (BETWEENNESS CENTRALITY) ---")
+    for i, (name, score) in enumerate(kingdoms_bw[:5], 1):
+        print(f"{i}. {name:<40} : {score:.5f}")
+
+    # 7. ADAMIC-ADAR INDEX FOR GENEALOGY SIMILARITY (replaces the deprecated Jaccard set-based approach)
+    # Jaccard on raw family-attribute SETS produced a sham 1.00 score whenever two unrelated
+    # figures both had empty/sparse relations (0/0 edge case). Adamic-Adar instead operates
+    # directly on graph topology (shared neighbors in G_undir, weighted by neighbor rarity),
+    # so two isolated nodes simply score 0 instead of a false-positive 1.00.
+    print("\nCalculating Genealogy Adamic-Adar Index (replacing Jaccard)...")
+
+    # Population = Person nodes that actually have at least one graph connection
+    # (family edge OR kingdom affiliation edge) - mirrors the previous "active_people" filter,
+    # but now grounded in real graph structure instead of raw attribute sets.
+    people_list = [n_ for n_ in G_undir.nodes() if node_types.get(n_) == 'Person' and G_undir.degree(n_) > 0]
+    n = len(people_list)
+    print(f"Analyzing {n} figures with at least one graph connection (family or kingdom affiliation).")
+
+    ebunch = [(people_list[i], people_list[j]) for i in range(n) for j in range(i + 1, n)]
+
+    aa_results = []
+    if ebunch:
+        for u, v, score in nx.adamic_adar_index(G_undir, ebunch):
+            if score > 0:
+                aa_results.append((u, v, score))
+
+    total_pairs_with_overlap = len(aa_results)
+    if total_pairs_with_overlap > 0:
+        sum_score = sum(r[2] for r in aa_results)
+        avg_score = sum_score / total_pairs_with_overlap
+        max_score = max(r[2] for r in aa_results)
+        print(f"Pairs with shared graph neighbors: {total_pairs_with_overlap}")
+        print(f"Average Adamic-Adar Index for connected pairs: {avg_score:.4f}")
+        print(f"Maximum Adamic-Adar Index observed: {max_score:.4f}")
+    else:
+        print("No pairs with shared graph neighbors found.")
+
+    aa_sorted = sorted(aa_results, key=lambda x: x[2], reverse=True)
+    print("\n--- TOP 5 MOST STRUCTURALLY SIMILAR PAIRS (Adamic-Adar Index) ---")
+    for i, (p1, p2, score) in enumerate(aa_sorted[:5], 1):
+        print(f"{i}. {p1} <-> {p2} (Adamic-Adar: {score:.4f})")
+
+    # Per-person average Adamic-Adar score (for CSV export / per-node enrichment)
+    aa_score_sum = {}
+    aa_score_count = {}
+    for p1, p2, score in aa_results:
+        aa_score_sum[p1] = aa_score_sum.get(p1, 0.0) + score
+        aa_score_count[p1] = aa_score_count.get(p1, 0) + 1
+        aa_score_sum[p2] = aa_score_sum.get(p2, 0.0) + score
+        aa_score_count[p2] = aa_score_count.get(p2, 0) + 1
+    avg_aa_per_person = {p: aa_score_sum[p] / aa_score_count[p] for p in aa_score_sum}
+
+    # 8. EXPORT METRICS BACK TO DATAFRAME
+    print("\nMapping metrics back to final dataset...")
+    df['orang_PageRank'] = df['orang'].map(lambda x: pagerank.get(x, 0.0) if pd.notna(x) else 0.0)
+    df['orang_Louvain_Cluster'] = df['orang'].map(lambda x: community_map.get(x, -1) if pd.notna(x) else -1)
+    df['orang_Betweenness'] = df['orang'].map(lambda x: betweenness.get(x, 0.0) if pd.notna(x) else 0.0)
+    df['orang_AdamicAdar_Avg'] = df['orang'].map(lambda x: avg_aa_per_person.get(x, 0.0) if pd.notna(x) else 0.0)
+    df['kerajaan_PageRank'] = df['kerajaan'].map(lambda x: pagerank.get(x, 0.0) if pd.notna(x) else 0.0)
+    df['kerajaan_Louvain_Cluster'] = df['kerajaan'].map(lambda x: community_map.get(x, -1) if pd.notna(x) else -1)
+    df['kerajaan_Betweenness'] = df['kerajaan'].map(lambda x: betweenness.get(x, 0.0) if pd.notna(x) else 0.0)
+
+    output_file = os.path.join(script_dir, "../data/dataset_dinasti_final_with_metrics.csv")
+    print(f"Exporting metrics to {output_file}...")
+    df.to_csv(output_file, sep=';', index=False, encoding='utf-8')
+    print("=== ANALYSIS FINISHED SUCCESSFULLY ===")
+
+if __name__ == "__main__":
+    main()
