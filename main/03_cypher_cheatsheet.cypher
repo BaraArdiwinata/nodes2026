@@ -224,15 +224,18 @@ WITH p ORDER BY p.pagerank_score DESC LIMIT 1
 MATCH path = (p)-[:AYAH|IBU*1..4]->(leluhur:Person)
 RETURN path;
 
-// Jalur leluhur terpanjang di seluruh graf:
+// Jalur leluhur terpanjang di seluruh graf (TERVERIFIKASI: 6 tingkat, dinasti Banjar):
 MATCH path = (p:Person)-[:AYAH|IBU*2..6]->(leluhur:Person)
-RETURN path ORDER BY length(path) DESC LIMIT 5;
+RETURN path ORDER BY length(path) DESC LIMIT 3;
 
-// --- 3.5 Rantai suksesi takhta ---   [RUN-TEST]
-MATCH path = (a:Person)-[:DIGANTIKAN_OLEH*2..5]->(b:Person)
-RETURN path ORDER BY length(path) DESC LIMIT 5;
+// --- 3.5 Suksesi takhta ---
+// TERVERIFIKASI: rantai suksesi hanya 1 hop (122 DIGANTIKAN_OLEH, 140 MENGGANTIKAN);
+// kueri *2..5 mengembalikan 0 baris. Gunakan pola 1 hop:
+MATCH path = (a:Person)-[:DIGANTIKAN_OLEH]->(b:Person)
+RETURN path LIMIT 25;
 
 // Pendahulu-penerus satu tokoh (dua arah):
+// Catatan: 'Hayam Wuruk' ada di DB tetapi TANPA metrik (hanya dibuat via relasi).
 MATCH (p:Person {name:'Hayam Wuruk'})
 OPTIONAL MATCH (p)-[:MENGGANTIKAN]->(pendahulu)
 OPTIONAL MATCH (p)-[:DIGANTIKAN_OLEH]->(penerus)
@@ -240,6 +243,8 @@ RETURN p.name, collect(DISTINCT pendahulu.name) AS pendahulu, collect(DISTINCT p
 // (ganti 'Hayam Wuruk' dengan nama persis di DB Anda)
 
 // --- 3.6 Hubungan keluarga: berbagi AYAH dan IBU yang sama (dari riwayat) ---
+// TERVERIFIKASI: 0 baris (tidak ada saudara kandung penuh di data). Pakai versi
+// "minimal satu orang tua" di bawah (13 pasangan).
 MATCH (p1:Person)-[:AYAH]->(ayah:Person), (p1)-[:IBU]->(ibu:Person)
 MATCH (p2:Person)-[:AYAH]->(ayah), (p2)-[:IBU]->(ibu)
 WHERE elementId(p1) < elementId(p2)          // hindari pasangan ganda (riwayat memakai p1 <> p2)
@@ -251,7 +256,10 @@ WHERE elementId(p1) < elementId(p2)
 RETURN p1.name AS Tokoh1, p2.name AS Tokoh2, collect(ortu.name) AS OrangTuaBersama
 ORDER BY size(OrangTuaBersama) DESC LIMIT 15;
 
-// --- 3.7 Jalur hubungan terpendek antar dua tokoh (padanan tool agent) ---   [RUN-TEST]
+// --- 3.7 Jalur hubungan terpendek antar dua tokoh (padanan tool agent) ---
+// TERVERIFIKASI: Rara Santang -> Kesultanan Cirebon -> Pangeran Walangsungsang (2 hop,
+// lewat node Kingdom, bukan lewat orang tua). Untuk jalur orang tua, batasi relasi:
+// shortestPath((a)-[:AYAH|IBU*..6]-(b))
 MATCH (a:Person {name:'Rara Santang'}), (b:Person {name:'Pangeran Walangsungsang'})
 MATCH path = shortestPath((a)-[*..8]-(b))
 RETURN path;

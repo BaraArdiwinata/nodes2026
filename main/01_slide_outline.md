@@ -2,7 +2,7 @@
 
 Core message: **Open knowledge graphs are sparse and dirty. We healed one with LLMs, then let an LLM agent reason over it through MCP, safely.**
 
-Speakers: **B** = Bara, **A** = Annisa. Numbers marked `[VERIFY]` must be confirmed (see `04_numbers_to_verify.md` once you create it from the laporan, section 0) before you say them.
+Speakers: **B** = Bara, **A** = Annisa. Database-derived numbers were verified against the live Neo4j on 2026-11-10; see `04_verified_metrics.md`.
 
 ---
 
@@ -29,17 +29,17 @@ Speakers: **B** = Bara, **A** = Annisa. Numbers marked `[VERIFY]` must be confir
 ### 5. Phase 1: enrichment pipeline (8:00, A, 3 min)
 - 5 stages: SPARQL fetch, encoding healer, entity disambiguation, LLM imputer, graph analytics.
 - Tell two stories only: (a) recursive cp1252 healer turns `Ã…Å¡akti` into `Śakti`; (b) RapidFuzz + LLM + Union-Find produce one `master_id` per person.
-- Notes: SPARQL `VALUES` lookup avoided timeouts (README says ~11 s) `[VERIFY]`.
+- Notes: SPARQL `VALUES` lookup avoided timeouts. README claims ~11 s and the dashboard claims 3.04 s average latency; neither is reproducible from the repo, so say "seconds instead of timeouts" and quote no figure.
 
 ### 6. Trust and provenance (11:00, A, 2 min)
 - Every row carries `source` (wikidata / llm_imputed / original), `confidence_score`, `manual_check`.
-- Current dataset: 354 wikidata, 49 llm_imputed, 3 original rows (406 total).
-- Notes: say provenance lives in the CSV and is the next thing to load into the graph. Imputation success rate `[VERIFY]`.
+- Current dataset: 354 wikidata, 49 llm_imputed, 3 original rows (406 total). Neo4j: 356 Person (139 with metrics), 24 Kingdom, 734 relationships.
+- Notes: say provenance lives in the CSV and is the next thing to load into the graph. Verified: 49 of 406 rows (12%) are `llm_imputed`, mean confidence 0.82. Do NOT quote "88% / 95 of 108": it cannot be reproduced from the dataset.
 
 ### 7. Graph analytics (13:00, A, 2 min)
 - PageRank, Louvain, Betweenness, Adamic-Adar; computed in NetworkX, stored as node properties.
 - Why Adamic-Adar replaces Jaccard: sparse nodes gave 0/0 or a false 100%; Adamic-Adar weights shared neighbours by rarity.
-- Results: top PageRank Abu al-Mahasin (Banten); top bridge Sunan Gunung Jati; 26 Louvain clusters.
+- Results (live DB): top PageRank Abu al-Mahasin (Banten, 0.0062), then Sri Isyana Tunggawijaya, Alauddin al-Qahhar (Aceh); top bridge Sunan Gunung Jati (0.050), then Maulana Hasanuddin; 26 Louvain clusters.
 - Notes: if asked about GDS, answer honestly (see Q&A prep). Transition: "We now have a clean, scored graph. How do we let an LLM use it safely? Bara."
 
 ### 8. Architecture: MCP + Neo4j (15:00, B, 2 min)
