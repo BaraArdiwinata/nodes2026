@@ -1,0 +1,58 @@
+{
+ "persons": 30,
+ "grounded": 30,
+ "totals": {
+  "raw": 61,
+  "rejected": 4,
+  "llm_calls": 28
+ },
+ "sparql": {
+  "requests": 3,
+  "retries": 0,
+  "seconds": 4.678138017654419
+ },
+ "llm": {
+  "calls": 30,
+  "retries": 0,
+  "failures": 0,
+  "tokens": 23397,
+  "latency": 51.583658933639526
+ },
+ "disamb": {
+  "checked": 2,
+  "merged": 0
+ },
+ "seconds": 227.5,
+ "homonyms": {
+  "Adam dari Banjar": 1,
+  "Demang Lehman": 1,
+  "Dharmawangsa Teguh": 1,
+  "Elizabeth Carter": 11,
+  "Gajah Mada": 1,
+  "Hidayatullah I dari Banjar": 1,
+  "Inayatullah dari Banjar": 1,
+  "Kertabhumi": 1,
+  "Kertajaya": 2,
+  "Kusumawardhani": 1,
+  "Maulana Hasanuddin": 1,
+  "Maulana Yusuf": 3,
+  "Mpu Sindok": 1,
+  "Pakubuwana X": 1,
+  "Panembahan Ratu I": 1,
+  "Pangeran Pekik": 1,
+  "Pangeran Walangsungsang": 1,
+  "Patih Masih": 1,
+  "Prabu Gilingwesi": 1,
+  "Ra Kuti": 1,
+  "Rahmatullah dari Banjar": 1,
+  "Rakeyan Medang": 1,
+  "Rara Santang": 1,
+  "Sri Baduga Maharaja": 1,
+  "Sri Isyana Tunggawijaya": 1,
+  "Sulaiman dari Banjar": 1,
+  "Sunan Gunung Jati": 1,
+  "Sunan Kudus": 1,
+  "Suriansyah dari Banjar": 1,
+  "Wikramawardhana": 1
+ }
+}
