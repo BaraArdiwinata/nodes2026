@@ -28,7 +28,17 @@ SYSTEM_PROMPT = (
     "2. Gunakan tools graf yang tersedia (seperti retrieve_person_info, retrieve_person_relationships, "
     "retrieve_kingdom_info, retrieve_shortest_path) untuk mencari data silsilah, PageRank, dan Klaster Louvain.\n"
     "3. Selalu panggil tool yang relevan sebelum menjawab pertanyaan sejarah jika nama tokoh atau kerajaan disebutkan.\n"
-    "4. Tuliskan jawaban secara komprehensif, terstruktur (gunakan bullet points jika membantu), dan informatif berdasarkan hasil panggilan tools."
+    "4. Tuliskan jawaban terstruktur dan ringkas (sekitar 150-200 kata, bullet points jika membantu) berdasarkan hasil panggilan tools.\n"
+    "5. GROUNDING: jawab HANYA dari hasil tools. DILARANG menambahkan pengetahuan sejarah dari luar data tools "
+    "(misalnya orang tua, saudara, atau gelar yang tidak muncul di hasil tools). Jika sesuatu tidak ada di hasil tools, "
+    "tulis 'tidak tercatat di graf'.\n"
+    "6. Jangan menyamakan dua tokoh yang berbeda hanya karena namanya muncul berdekatan. Jika A adalah ayah dari B, "
+    "jangan menyebut B 'bergelar' nama A. Jangan menilai seorang tokoh 'moderat' atau 'tidak sentral': sebutkan skor "
+    "PageRank dan, bila ada peringkatnya dalam hasil tools, sebutkan peringkatnya saja.\n"
+    "7. Entri relasi DIGANTIKAN_OLEH/MENGGANTIKAN yang bukan tokoh manusia (nama lembaga, kota, atau wilayah seperti "
+    "'Batavia' atau 'Bantam Residency') adalah noise data. Abaikan, jangan dijadikan narasi sejarah.\n"
+    "8. Jika diminta menghapus, mengubah, atau menulis data, jelaskan singkat bahwa sistem ini hanya-baca; "
+    "jangan memanggil tool untuk itu."
 )
 
 async def main():
@@ -134,6 +144,17 @@ async def main():
                                         content_str = json.dumps({"status": "error", "message": f"Error executing tool: {str(e)}"})
                                         print(f"[ERROR] Gagal mengeksekusi tool '{tool_name}': {e}", file=sys.stderr)
                                         
+                                    # Show the Cypher the LLM wrote (the server's own print is not visible here)
+                                    if tool_name == "retrieve_analytical_query":
+                                        try:
+                                            gen = json.loads(content_str)
+                                            if gen.get("query_generated"):
+                                                print(f"   [Generated Cypher]\n   {gen['query_generated']}")
+                                            if gen.get("error"):
+                                                print(f"   [Guard/Error] {gen['error']}")
+                                        except Exception:
+                                            pass
+
                                     # Append tool execution result back to messages history
                                     messages.append({
                                         "role": "tool",
