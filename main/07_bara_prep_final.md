@@ -66,20 +66,21 @@ Gaya umum: latar gelap, caption node = `name`, caption relasi disembunyikan (kec
 
 ### S1. Slide 11: jembatan Cirebon-Banten (wajib)
 ```cypher
-MATCH (p:Person)-[:MEMIMPIN_ATAU_TERAFILIASI]->(k:Kingdom)
+MATCH (p:Person)-[a:MEMIMPIN_ATAU_TERAFILIASI]->(k:Kingdom)
 WHERE k.name IN ['Kesultanan Cirebon','Kesultanan Banten']
-OPTIONAL MATCH (p)-[r:AYAH|ANAK|PASANGAN|SAUDARA]-(q:Person)
-RETURN p, r, q, k
+OPTIONAL MATCH (p)-[r:AYAH|PASANGAN|SAUDARA]-(q:Person)
+RETURN p, a, r, q, k
 ```
-Hasil: 18 tokoh, 32 tokoh terkait, 50 relasi. Sengaja tanpa `IBU` (edge `IBU` Rara Santang salah) dan tanpa relasi suksesi (node sampah).
+Hasil (diukur ulang): 29 node, 18 relasi afiliasi, 26 relasi keluarga. **Koreksi:** versi sebelumnya tidak mengembalikan relasi afiliasi (`a`), sehingga node Kingdom (emas) tampil terpisah dan tidak terhubung. Relasi `ANAK` juga dibuang karena merupakan cermin `AYAH` dan membuat garis ganda. Sengaja tanpa `IBU` (edge `IBU` Rara Santang salah) dan tanpa relasi suksesi (node sampah).
 **Bloom:** Perspective baru → kategori `Person` dan `Kingdom`. Aturan gaya `Person`: *Size* = rule by `pagerank_score` (range), *Color* = rule by `louvain_cluster` (unique values), caption `name`. `Kingdom`: warna emas tetap, ukuran besar, caption `name`. Hapus tipe relasi `DIGANTIKAN_OLEH`, `MENGGANTIKAN`, `KERABAT`, `IBU` dari Perspective. Letakkan Sunan Gunung Jati di tengah antara dua klaster (5 dan 14). Cadangan tanpa Bloom: Browser dengan caption `name` + anotasi manual.
 
 ### S2. Slide 15 langkah 1: dinasti Banten
 ```cypher
-MATCH (k:Kingdom {name:'Kesultanan Banten'})<-[:MEMIMPIN_ATAU_TERAFILIASI]-(p:Person)
-OPTIONAL MATCH (p)-[r:AYAH|ANAK|PASANGAN|SAUDARA]-(q:Person)
-RETURN k, p, r, q
+MATCH (k:Kingdom {name:'Kesultanan Banten'})<-[a:MEMIMPIN_ATAU_TERAFILIASI]-(p:Person)
+OPTIONAL MATCH (p)-[r:AYAH|PASANGAN|SAUDARA]-(q:Person)
+RETURN k, a, p, r, q
 ```
+(`a` wajib ikut di `RETURN`, kalau tidak node Kingdom tampil terpisah.)
 14 tokoh, 31 tokoh terkait, 69 relasi (hitungan memakai `IBU` juga; tanpa `IBU` sedikit lebih kecil). Gaya sama dengan S1. Simpul terbesar harus **Abu al-Mahasin**.
 
 ### S3. Slide 6: GIF "satu query, satu jalur"
@@ -117,9 +118,9 @@ RETURN path
 
 **Subgraf Banjar penuh:**
 ```cypher
-MATCH (k:Kingdom {name:'Kesultanan Banjar'})<-[:MEMIMPIN_ATAU_TERAFILIASI]-(p:Person)
+MATCH (k:Kingdom {name:'Kesultanan Banjar'})<-[a:MEMIMPIN_ATAU_TERAFILIASI]-(p:Person)
 OPTIONAL MATCH (p)-[r:AYAH|IBU]->(q:Person)
-RETURN k, p, r, q
+RETURN k, a, p, r, q
 ```
 (22 tokoh, 26 relasi orang tua.)
 
