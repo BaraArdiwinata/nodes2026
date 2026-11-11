@@ -23,12 +23,17 @@ Files in `main/`:
 | File | Content |
 |---|---|
 | [`00_laporan_nodes2026.md`](main/00_laporan_nodes2026.md) | Full project refresher, presentation strategy, and a list of inconsistencies found in the original docs |
-| [`01_slide_outline.md`](main/01_slide_outline.md) | 13-slide outline with speaker notes (English) |
+| [`NusantaraGraph_NODES2026.pptx`](main/NusantaraGraph_NODES2026.pptx) | Presentation deck (18 slides + 3 backup) with the full script in speaker notes |
+| [`01_slide_outline.md`](main/01_slide_outline.md) | Slide map of the "Jas Merah" storyline: order, timing, one message per slide |
 | [`02_demo_script.md`](main/02_demo_script.md) | Live demo script and failure playbook |
 | [`03_cypher_cheatsheet.cypher`](main/03_cypher_cheatsheet.cypher) | Ingestion, data-quality checks, and demo-ready queries |
 | [`04_verified_metrics.md`](main/04_verified_metrics.md) | Numbers measured on the live Neo4j instance |
 | [`05_qa_prep.md`](main/05_qa_prep.md) | Likely audience questions with honest answers |
 | [`06_checklist_hari_h.md`](main/06_checklist_hari_h.md) | Technical checklist from H-3 to the day of the talk (Indonesian) |
+| [`07_intro_script.md`](main/07_intro_script.md) | Word-for-word "Jas Merah" opening and closing lines |
+| [`08_catatan_edit_ppt.md`](main/08_catatan_edit_ppt.md) | What to edit in the deck: Neo4j screenshots/GIFs per slide, facts to check, code-check results (Indonesian) |
+| [`09_full_script.md`](main/09_full_script.md) | Full talk script, slide by slide, with timing, stage cues and Indonesian one-line summaries |
+| [`10_belajar_teknis.md`](main/10_belajar_teknis.md) | Plain-language technical guide to the whole system, checked against the code (Indonesian) |
 
 ---
 

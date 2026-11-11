@@ -11,7 +11,7 @@
 | Why are `ANAK` and `AYAH` both modelled? | They are loaded from separate source columns; the same fact can appear in both directions. A cleanup into one canonical direction is future work. | A |
 | Does the agent remember earlier questions? | Not currently: history is rebuilt per question. Easy fix: keep `messages` across turns. | B |
 | How do you avoid hallucination? | The system prompt forces tool calls first and answers are built from tool JSON; it reduces but does not eliminate errors. Provenance in the graph would let the agent cite confidence. | B |
-| Fallback when Neo4j is down? | Person and kingdom lookups fall back to the CSV; path and analytical tools need Neo4j. | B |
+| Fallback when Neo4j is down? | Person info, person relationships and kingdom info fall back to the CSV; shortest path and the analytical (Text-to-Cypher) tool need Neo4j. | B |
 | How did you resolve duplicate people? | RapidFuzz fuzzy match, LLM confirmation for borderline scores, Union-Find to assign one `master_id`. State the thresholds you verified in the code. | A |
 | Why Adamic-Adar over Jaccard? | Jaccard gave 0/0 or false 100% on sparse nodes; Adamic-Adar weights shared neighbours by 1/log(degree). | A |
 | Is the history correct? | The graph is only as good as Wikidata/DBpedia/Wikipedia plus LLM extraction; it is a research prototype, not a historical authority. | A |
