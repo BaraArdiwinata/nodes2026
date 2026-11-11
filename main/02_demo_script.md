@@ -1,5 +1,7 @@
 # Demo Script (4.5 min)
 
+> **Read-aloud version:** the demo dialogue (Annisa hosts and translates, Bara operates) is in [`09_full_script.md`](09_full_script.md), slide 15. This file keeps the technical checklist and failure playbook.
+
 **Pre-flight (do before going live):** Neo4j running with data loaded; Neo4j Browser in tab 1; terminal tab 2 with `python mcp_agent.py` already started (font >= 18pt); `python mcp_server.py` warmed up once earlier; backup video ready at `main/backup/`.
 **Rule:** type only the prompts below; the agent has no conversation memory, so no follow-up questions. Confirm each name's exact spelling in the DB beforehand.
 
