@@ -13,6 +13,7 @@ sys.path.append(os.path.join(workspace_dir, 'scripts'))
 # Load environment variables
 load_dotenv(os.path.join(workspace_dir, '.env'))
 
+import importlib.metadata as _md
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 from scripts.graph_rag_bot import OPENROUTER_API_KEY, query_openrouter_raw
@@ -49,7 +50,7 @@ async def main():
         async with stdio_client(server_params) as (read, write):
             # Establish the client session with an explicit 60-second read timeout
             # to handle slow startup/booting times on Windows environments.
-            async with ClientSession(read, write, read_timeout_seconds=timedelta(seconds=60.0)) as session:
+            async with ClientSession(read, write, read_timeout_seconds=(60.0 if int(_md.version('mcp').split('.')[0]) >= 2 else timedelta(seconds=60.0))) as session:
                 print("Menginisialisasi sesi komunikasi MCP...")
                 await session.initialize()
                 
