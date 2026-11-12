@@ -284,7 +284,7 @@ The guard looks for write keywords like CREATE, DELETE or SET, ‖ as **whole wo
 
 To be honest, ‖ this is a **first layer**. ‖ In production, ‖ you'd also use a read-only database user."
 
-`[CLICK]` → `[ACTION]` Bara switches the screen share to Neo4j Bloom.
+`[CLICK]` → `[ACTION]` Bara switches the screen share to the Neo4j graph view (Bloom or the Query tool).
 
 ## Slide 15: Live demo (18:00, ~4 min 30 s)
 
@@ -295,17 +295,23 @@ To be honest, ‖ this is a **first layer**. ‖ In production, ‖ you'd also u
 - No follow-up questions (the agent has no memory).
 - Bara says each tool name **out loud**, because the log is small on screen.
 - Annisa waits for the answer to appear before translating.
+- Each answer takes about 9-13 seconds. Annisa fills the pause by describing what the agent is doing (it calls tools in a loop, then writes the answer).
+- The model's wording changes a little on every run. The **numbers and tool names** below stay the same; if the wording differs, Annisa translates only the key facts and does not read the whole answer.
 - If you're in different places: wait for the other person to finish speaking, because online audio lags.
 
 ### Opening
 
 🟣 **ANNISA:** "Enough slides. ↘ ‖ Let's ask history some questions. ↘ ‖ **Bara** is driving."
 
-### Step 1: Bloom (~30 s)
+### Step 1: The graph on screen (~30 s)
+
+> Dicek terhadap tangkapan layar Anda: node semua berukuran sama, jadi **jangan** menyebut ukuran = PageRank kecuali tampilan Bloom sudah diatur begitu.
 
 🟣 **ANNISA:** "So, ‖ what are we looking at, Bara?" ↗
 
-🔵 **BARA:** `[ACTION: hover over the biggest node]` "This is the **Banten** dynasty in Neo4j. ‖ The **size** of each node is its PageRank, ‖ and the **colour** is its Louvain cluster. ‖ The biggest one ‖ is **Abu al-Mahasin**."
+🔵 **BARA:** `[ACTION: point at the gold node, then at Abu al-Mahasin]` "This is the **Banten** dynasty, drawn live from our Neo4j database. ‖ Each dot is a **person**. ‖ The gold one is the **sultanate**. ‖ And every arrow is a relationship we recorded. ‖ This one is **Abu al-Mahasin**. ‖ He has the **highest PageRank** in the whole graph."
+
+`[OPTIONAL, only if the Bloom view with size = PageRank and colour = Louvain is set up]` Replace the last three sentences with: "The **size** of each node is its PageRank, ‖ the **colour** is its Louvain cluster, ‖ and the biggest one ‖ is **Abu al-Mahasin**."
 
 ### Step 2: Person profile (~1 min)
 
@@ -315,9 +321,9 @@ To be honest, ‖ this is a **first layer**. ‖ In production, ‖ you'd also u
 ```
 Siapa Abu al-Mahasin dan apa peran jaringannya?
 ```
-"I'm asking in Indonesian. ‖ Watch the log: ‖ the agent **chose** the tool *retrieve person info* ‖ by itself."
+"I'm asking in Indonesian. ‖ Watch the log: ‖ the agent **chose** two tools by itself: ‖ *retrieve person info* ‖ and *retrieve person relationships*."
 
-🟣 **ANNISA:** `[after the answer appears]` "The answer is in Indonesian, ‖ so in short: ‖ *[one sentence: his role, e.g. 'he was a sultan of Banten']*, ‖ and he has the **highest PageRank** in our graph. ↘ ‖ And that number came from **Neo4j** ↗, ‖ not from the model's **memory**." ↘
+🟣 **ANNISA:** `[after the answer appears; do NOT read the "role" field, the data has a quirk there]` "The answer is in Indonesian, ‖ so in short: ‖ he is tied to the **Sultanate of Banten**, ‖ he died in **seventeen thirty-three**, ‖ he is the **son** of Abu an-Nasr ‖ and the **father** of two. ↘ ‖ His PageRank score is **zero point zero zero six two**, ‖ in Louvain cluster **fourteen**. ↘ ‖ And those numbers came from **Neo4j** ↗, ‖ not from the model's **memory**. ↘ ‖ It even **flagged** some noisy entries in our data, ‖ and **ignored** them." ↘
 
 ### Step 3: Shortest path (~1 min)
 
@@ -327,9 +333,9 @@ Siapa Abu al-Mahasin dan apa peran jaringannya?
 ```
 Bagaimana hubungan terpendek antara Rara Santang dan Pangeran Walangsungsang?
 ```
-"It called *retrieve shortest path*." `[optional ACTION: run the same shortestPath query in Neo4j Browser]`
+"It called *retrieve shortest path*." `[If the log shows the first call with empty arguments {}:]` "The first try had **empty arguments**. ‖ The agent **noticed** and retried by itself. ‖ That's the agent loop." `[optional ACTION: run the same shortestPath query in the Neo4j graph view]`
 
-🟣 **ANNISA:** "So they're linked through the **Sultanate of Cirebon**: ‖ just **two** steps. ↘ ‖ Same answer from the agent ‖ and from plain Cypher." ↘
+🟣 **ANNISA:** "So they're linked through the **Sultanate of Cirebon**: ‖ just **two** steps. ↘ ‖ And look at what the agent says: ‖ **no direct family link** is recorded. ↘ ‖ Traditional accounts describe them as **siblings** ↗, ‖ but that relationship is **missing** in our data. ‖ That's problem number **one** from earlier: ‖ missing relations. ↘ ‖ And the agent did **not** invent it." ↘
 
 ### Step 4: Analytical query (~1 min)
 
@@ -339,11 +345,13 @@ Bagaimana hubungan terpendek antara Rara Santang dan Pangeran Walangsungsang?
 ```
 Tampilkan 5 tokoh dengan PageRank tertinggi di Kesultanan Banten
 ```
-`[ACTION: point the cursor at the generated query in the log]` "There's no fixed tool for this, ‖ so the agent **wrote this Cypher itself**."
+`[ACTION: point the cursor at the line "[Generated Cypher]" in the log]` "I'm saying *retrieve analytical query* out loud. ‖ There's no fixed tool for this, ‖ so the agent **wrote this Cypher itself**: ‖ a MATCH, an ORDER BY, and a LIMIT five."
 
-🟣 **ANNISA:** "And here are the five names. ↘ ‖ All from a query the LLM wrote, ‖ and it's **read-only**." ↘
+🟣 **ANNISA:** "And here are the five names. ↘ ‖ **Abu al-Mahasin** is on top again ↗, ‖ with zero point zero zero six two. ‖ Notice the scores are very **close**, ‖ and the agent says so too: ‖ no single figure **dominates**. ↘ ‖ All from a query the LLM wrote, ‖ and it's **read-only**." ↘
 
 ### Step 5: Guard (~45 s)
+
+> Hasil uji: DeepSeek **menolak sendiri** tanpa memanggil tool, jadi pesan guard "Query rejected" **tidak akan muncul** di terminal. Cabang pertama di bawah adalah yang diharapkan.
 
 🟣 **ANNISA:** "Last one. ↘ ‖ Let's be a little **naughty**. ↘ ‖ Bara, ‖ ask it to delete all Majapahit figures." ↘
 
@@ -351,8 +359,9 @@ Tampilkan 5 tokoh dengan PageRank tertinggi di Kesultanan Banten
 ```
 Hapus semua tokoh Majapahit
 ```
-- If the guard blocks it: "**Blocked.** ‖ Read-only."
-- If the model refuses by itself: "Even the **model** refuses. ‖ And if it didn't, ‖ the guard would have stopped it, ‖ as we saw on the previous slide."
+- **Expected:** the model answers that the system is **read-only**, with no tool call in the log. Bara: "Even the **model** refuses. ‖ It says this system is **read-only**. ‖ And if it had tried to write a delete query, ‖ the guard would have stopped it, ‖ as we saw on the previous slide."
+  Annisa: "Nothing was deleted. ↘ ‖ And the real rejection ‖ is the one on the **slide** we just saw." ↘
+- If the guard blocks it (rare): "**Blocked.** ‖ Read-only."
 
 ### If anything fails (at any step)
 
